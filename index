@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>월별 전력 수급 현황 분석</title>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+*{
+    margin:0;
+    padding:0;
+    box-sizing:border-box;
+    font-family:"Malgun Gothic", sans-serif;
+}
+
+body{
+    background:#f4f6f9;
+    padding:30px;
+}
+
+.container{
+    max-width:1200px;
+    margin:auto;
+}
+
+h1{
+    text-align:center;
+    margin-bottom:20px;
+    color:#222;
+}
+
+.card{
+    background:white;
+    padding:20px;
+    border-radius:15px;
+    box-shadow:0 3px 10px rgba(0,0,0,0.1);
+    margin-bottom:25px;
+}
+
+select{
+    padding:10px;
+    font-size:16px;
+    border-radius:8px;
+    border:1px solid #ccc;
+}
+
+.info{
+    margin-top:15px;
+    font-size:18px;
+    font-weight:bold;
+    color:#333;
+}
+
+canvas{
+    margin-top:20px;
+}
+</style>
+
+</head>
+
+<body>
+
+<div class="container">
+
+```
+<h1>⚡ 월별 전력 수급 현황 시각화</h1>
+
+<div class="card">
+    <label>연도 선택 : </label>
+    <select id="yearSelect"></select>
+
+    <div class="info" id="summary"></div>
+
+    <canvas id="yearChart"></canvas>
+</div>
+
+<div class="card">
+    <h2>연도별 전체 비교</h2>
+    <canvas id="compareChart"></canvas>
+</div>
+```
+
+</div>
+
+<script>
+
+const csvFile = "HOME_전력수급_최대_최소전력월별평균.csv";
+
+const months = [
+    "1월","2월","3월","4월","5월","6월",
+    "7월","8월","9월","10월","11월","12월"
+];
+
+let rawData = [];
+let yearChart;
+let compareChart;
+
+fetch(csvFile)
+.then(res => res.text())
+.then(text => {
+
+    const rows = text.trim().split("\n");
+
+    const headers = rows[0]
+        .replace(/\r/g,"")
+        .split(",");
+
+    rawData = rows.slice(1).map(row => {
+
+        const cols = row.replace(/\r/g,"").split(",");
+
+        let obj = {};
+
+        headers.forEach((h,i)=>{
+            obj[h.trim()] = cols[i];
+        });
+
+        return obj;
+    });
+
+    initialize();
+});
+
+function initialize(){
+
+    const select = document.getElementById("yearSelect");
+
+    rawData.forEach(row=>{
+
+        const option = document.createElement("option");
+        option.value = row["연도"];
+        option.textContent = row["연도"];
+
+        select.appendChild(option);
+    });
+
+    select.addEventListener("change",()=>{
+        drawYearChart(select.value);
+    });
+
+    drawYearChart(rawData[0]["연도"]);
+    drawCompareChart();
+}
+
+function drawYearChart(year){
+
+    const row = rawData.find(r=>r["연도"]===year);
+
+    const values = months.map(
+        m => Number(row[m])
+    );
+
+    const maxValue = Math.max(...values);
+    const minValue = Math.min(...values);
+
+    const maxMonth = months[values.indexOf(maxValue)];
+    const minMonth = months[values.indexOf(minValue)];
+
+    document.getElementById("summary").innerHTML =
+        `📈 최대 전력수급 : ${maxMonth} (${maxValue.toLocaleString()})<br>
+         📉 최소 전력수급 : ${minMonth} (${minValue.toLocaleString()})`;
+
+    if(yearChart){
+        yearChart.destroy();
+    }
+
+    yearChart = new Chart(
+        document.getElementById("yearChart"),
+        {
+            type:"bar",
+            data:{
+                labels:months,
+                datasets:[{
+                    label:`${year}년 월별 전력수급`,
+                    data:values
+                }]
+            },
+            options:{
+                responsive:true,
+                plugins:{
+                    legend:{
+                        display:true
+                    }
+                }
+            }
+        }
+    );
+}
+
+function drawCompareChart(){
+
+    const datasets = rawData
+        .slice(0,10)
+        .map(row=>{
+
+            return {
+                label: row["연도"],
+                data: months.map(
+                    m => Number(row[m])
+                ),
+                fill:false
+            };
+        });
+
+    compareChart = new Chart(
+        document.getElementById("compareChart"),
+        {
+            type:"line",
+            data:{
+                labels:months,
+                datasets:datasets
+            },
+            options:{
+                responsive:true,
+                interaction:{
+                    mode:"index",
+                    intersect:false
+                }
+            }
+        }
+    );
+}
+
+</script>
+
+</body>
+</html>
