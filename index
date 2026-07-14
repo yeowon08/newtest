@@ -1,297 +1,228 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>폭염·기후변화 분석 대시보드</title>
-
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>온열질환자 수 분석 대시보드</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
 <style>
 *{
-margin:0;
-padding:0;
-box-sizing:border-box;
-font-family:'Malgun Gothic',sans-serif;
+  margin:0;
+  padding:0;
+  box-sizing:border-box;
+  font-family:'Malgun Gothic',sans-serif;
 }
-
 body{
-background:linear-gradient(135deg,#FFE5EC,#FFF1C1,#DFFFE0,#DDEBFF,#EAD7FF);
-min-height:100vh;
-padding:30px;
+  background:linear-gradient(135deg,#FFE5EC,#FFF1C1,#DFFFE0,#DDEBFF,#EAD7FF);
+  min-height:100vh;
+  padding:30px;
 }
-
 .container{
-max-width:1100px;
-margin:auto;
+  max-width:1100px;
+  margin:auto;
 }
-
 h1{
-text-align:center;
-margin-bottom:20px;
-color:#444;
+  text-align:center;
+  margin-bottom:20px;
+  color:#444;
 }
-
 .selector{
-text-align:center;
-margin-bottom:25px;
+  text-align:center;
+  margin-bottom:25px;
 }
-
 select{
-padding:12px 18px;
-font-size:18px;
-border:none;
-border-radius:12px;
-background:white;
-box-shadow:0 3px 10px rgba(0,0,0,0.1);
+  padding:12px 18px;
+  font-size:18px;
+  border:none;
+  border-radius:12px;
+  background:white;
+  box-shadow:0 3px 10px rgba(0,0,0,0.1);
 }
-
 .cards{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-gap:20px;
-margin-bottom:30px;
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:20px;
+  margin-bottom:30px;
 }
-
 .card{
-background:white;
-padding:25px;
-border-radius:20px;
-text-align:center;
-box-shadow:0 5px 15px rgba(0,0,0,0.08);
+  background:white;
+  padding:25px;
+  border-radius:20px;
+  text-align:center;
+  box-shadow:0 5px 15px rgba(0,0,0,0.08);
 }
-
 .card h2{
-font-size:20px;
-margin-bottom:10px;
+  font-size:20px;
+  margin-bottom:10px;
 }
-
 .card p{
-font-size:32px;
-font-weight:bold;
-color:#ff69b4;
+  font-size:32px;
+  font-weight:bold;
+  color:#ff69b4;
 }
-
 .chart-box{
-background:white;
-padding:20px;
-border-radius:20px;
-box-shadow:0 5px 15px rgba(0,0,0,0.08);
+  background:white;
+  padding:20px;
+  border-radius:20px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.08);
+  height:420px;
 }
-
 .analysis{
-margin-top:25px;
-background:white;
-padding:20px;
-border-radius:20px;
-box-shadow:0 5px 15px rgba(0,0,0,0.08);
-line-height:1.8;
+  margin-top:25px;
+  background:white;
+  padding:20px;
+  border-radius:20px;
+  box-shadow:0 5px 15px rgba(0,0,0,0.08);
+  line-height:1.8;
 }
-
 @media(max-width:768px){
-.card p{
-font-size:26px;
-}
+  .card p{font-size:26px;}
 }
 </style>
 </head>
-
 <body>
-
 <div class="container">
+  <h1>🌡️ 온열질환자 수 분석 대시보드 📈</h1>
 
-<h1>🌡️ 폭염·기후변화 분석 대시보드 📈</h1>
+  <div class="selector">
+    📍 지역 선택 :
+    <select id="regionSelect">
+      <option>서울</option>
+      <option>부산</option>
+      <option>대구</option>
+      <option>인천</option>
+      <option>대전</option>
+      <option>울산</option>
+      <option>수원</option>
+      <option>양평</option>
+      <option>전주</option>
+      <option>거제</option>
+      <option>제주</option>
+      <option>세종</option>
+      <option>강릉</option>
+    </select>
+  </div>
 
-<div class="selector">
-📍 지역 선택 :
-<select id="regionSelect">
-<option>서울</option>
-<option>부산</option>
-<option>대구</option>
-<option>인천</option>
-<option>대전</option>
-<option>울산</option>
-<option>수원</option>
-<option>양평</option>
-<option>전주</option>
-<option>거제</option>
-</select>
-</div>
+  <div class="cards">
+    <div class="card">
+      <h2>📅 데이터 연도 수</h2>
+      <p id="yearCount">0년</p>
+    </div>
+    <div class="card">
+      <h2>👥 최신 연도 환자수</h2>
+      <p id="latestCount">0명</p>
+    </div>
+    <div class="card">
+      <h2>📈 누적 환자수</h2>
+      <p id="totalCount">0명</p>
+    </div>
+  </div>
 
-<div class="cards">
+  <div class="chart-box">
+    <canvas id="tempChart"></canvas>
+  </div>
 
-<div class="card">
-<h2>🌡 평균 최고기온</h2>
-<p id="highTemp">0℃</p>
-</div>
-
-<div class="card">
-<h2>🌙 평균 최저기온</h2>
-<p id="lowTemp">0℃</p>
-</div>
-
-<div class="card">
-<h2>☀ 평균기온</h2>
-<p id="avgTemp">0℃</p>
-</div>
-
-</div>
-
-<div class="chart-box">
-<canvas id="tempChart"></canvas>
-</div>
-
-<div class="analysis">
-<h3>🔍 분석 결과</h3>
-<p id="analysisText"></p>
-</div>
-
+  <div class="analysis">
+    <h3>🔍 분석 결과</h3>
+    <p id="analysisText"></p>
+  </div>
 </div>
 
 <script>
+const years = ["2015","2016","2017","2018","2019","2020","2021","2022","2023","2024","2025"];
+let allData = [];
+let chart;
 
-const climateData = {
-
-서울:{
-high:31.2,
-low:23.6,
-avg:27.4,
-yearly:[25.1,25.4,25.8,26.2,26.6,27.0]
-},
-
-부산:{
-high:29.8,
-low:24.3,
-avg:27.0,
-yearly:[24.8,25.0,25.2,25.5,25.8,26.2]
-},
-
-대구:{
-high:33.1,
-low:24.1,
-avg:28.6,
-yearly:[26.0,26.3,26.7,27.1,27.6,28.0]
-},
-
-인천:{
-high:29.4,
-low:23.1,
-avg:26.2,
-yearly:[24.0,24.2,24.6,25.0,25.4,25.8]
-},
-
-대전:{
-high:31.8,
-low:23.5,
-avg:27.6,
-yearly:[25.0,25.3,25.7,26.1,26.5,26.9]
-},
-
-울산:{
-high:30.5,
-low:24.0,
-avg:27.2,
-yearly:[24.7,25.0,25.4,25.8,26.1,26.5]
-},
-
-수원:{
-high:31.1,
-low:23.4,
-avg:27.0,
-yearly:[24.9,25.2,25.5,25.9,26.3,26.7]
-},
-
-양평:{
-high:29.9,
-low:22.1,
-avg:26.0,
-yearly:[23.8,24.1,24.5,24.9,25.3,25.7]
-},
-
-전주:{
-high:32.0,
-low:23.8,
-avg:27.9,
-yearly:[25.4,25.8,26.1,26.5,27.0,27.4]
-},
-
-거제:{
-high:29.5,
-low:24.5,
-avg:27.0,
-yearly:[24.6,24.9,25.2,25.6,26.0,26.4]
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  const headers = lines[0].split(",").map(v => v.trim());
+  return lines.slice(1).map(line => {
+    const values = line.split(",").map(v => v.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = values[i]);
+    return obj;
+  });
 }
 
-};
+function buildChart(dataPoints) {
+  const ctx = document.getElementById("tempChart");
 
-const years=["2020","2021","2022","2023","2024","2025"];
+  if (chart) chart.destroy();
 
-const ctx=document.getElementById("tempChart");
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: years,
+      datasets: [{
+        label: "온열환자수(명)",
+        data: dataPoints,
+        borderWidth: 3,
+        tension: 0.3,
+        fill: false,
+        borderColor: "#ff69b4",
+        backgroundColor: "#ff69b4",
+        pointRadius: 4
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: {
+        legend: { display: true }
+      },
+      scales: {
+        y: { beginAtZero: true }
+      }
+    }
+  });
+}
 
-let chart=new Chart(ctx,{
-type:"line",
-data:{
-labels:years,
-datasets:[{
-label:"여름 평균기온(℃)",
-data:climateData["서울"].yearly,
-borderWidth:3,
-tension:0.3,
-fill:false
-}]
-},
-options:{
-responsive:true,
-plugins:{
-legend:{
-display:true
+function updateData(region) {
+  const filtered = allData.filter(d => d.region === region);
+
+  const mapped = years.map(y => {
+    const row = filtered.find(d => String(d.year) === String(y));
+    return row ? Number(row.heat_patients) : null;
+  });
+
+  const valid = mapped.filter(v => v !== null);
+  const total = valid.reduce((a, b) => a + b, 0);
+  const latest = valid.length ? valid[valid.length - 1] : 0;
+
+  document.getElementById("yearCount").innerText = `${valid.length}년`;
+  document.getElementById("latestCount").innerText = `${latest.toLocaleString()}명`;
+  document.getElementById("totalCount").innerText = `${total.toLocaleString()}명`;
+
+  chart.data.datasets[0].data = mapped;
+  chart.update();
+
+  const first = valid[0] || 0;
+  const last = valid[valid.length - 1] || 0;
+  const change = (last - first).toLocaleString();
+
+  document.getElementById("analysisText").innerHTML =
+    `${region}의 온열환자수는 2015년부터 2025년까지 확인할 수 있습니다. ` +
+    `첫해 대비 최신 연도의 변화는 <strong>${change}명</strong>입니다. ` +
+    `이 대시보드는 지역별 온열질환 추세를 시각적으로 비교하도록 설계되었습니다.`;
 }
-}
-}
+
+fetch("heat_patients_2015_2025.csv")
+  .then(r => r.text())
+  .then(text => {
+    allData = parseCSV(text);
+    buildChart(years.map(() => null));
+    updateData(document.getElementById("regionSelect").value);
+  })
+  .catch(err => {
+    console.error(err);
+    document.getElementById("analysisText").innerText =
+      "CSV 파일을 불러오지 못했습니다. 파일명과 경로를 확인하세요.";
+    buildChart(years.map(() => null));
+  });
+
+document.getElementById("regionSelect").addEventListener("change", function() {
+  updateData(this.value);
 });
-
-function updateData(region){
-
-const data=climateData[region];
-
-document.getElementById("highTemp").innerText=
-data.high+"℃";
-
-document.getElementById("lowTemp").innerText=
-data.low+"℃";
-
-document.getElementById("avgTemp").innerText=
-data.avg+"℃";
-
-chart.data.datasets[0].data=data.yearly;
-chart.update();
-
-const increase=
-(data.yearly[data.yearly.length-1]
--
-data.yearly[0]).toFixed(1);
-
-document.getElementById("analysisText").innerHTML=
-`📍 ${region}의 여름 평균기온은
-2020년부터 2025년까지 약
-<strong>${increase}℃</strong>
-상승한 것으로 나타난다.
-이는 기후변화와 도시 열섬현상의
-영향으로 해석할 수 있으며,
-폭염과 열대야 증가,
-온열질환 발생 위험 증가와
-관련이 있을 것으로 예상된다.`;
-}
-
-updateData("서울");
-
-document
-.getElementById("regionSelect")
-.addEventListener("change",function(){
-updateData(this.value);
-});
-
 </script>
-
 </body>
 </html>
