@@ -1,229 +1,295 @@
 <!DOCTYPE html>
-
 <html lang="ko">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-<title>월별 전력 수급 현황 분석</title>
+<title>폭염·기후변화 분석 대시보드</title>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
 <style>
 *{
-    margin:0;
-    padding:0;
-    box-sizing:border-box;
-    font-family:"Malgun Gothic", sans-serif;
+margin:0;
+padding:0;
+box-sizing:border-box;
+font-family:'Malgun Gothic',sans-serif;
 }
 
 body{
-    background:#f4f6f9;
-    padding:30px;
+background:linear-gradient(135deg,#FFE5EC,#FFF1C1,#DFFFE0,#DDEBFF,#EAD7FF);
+min-height:100vh;
+padding:30px;
 }
 
 .container{
-    max-width:1200px;
-    margin:auto;
+max-width:1100px;
+margin:auto;
 }
 
 h1{
-    text-align:center;
-    margin-bottom:20px;
-    color:#222;
+text-align:center;
+margin-bottom:20px;
+color:#444;
 }
 
-.card{
-    background:white;
-    padding:20px;
-    border-radius:15px;
-    box-shadow:0 3px 10px rgba(0,0,0,0.1);
-    margin-bottom:25px;
+.selector{
+text-align:center;
+margin-bottom:25px;
 }
 
 select{
-    padding:10px;
-    font-size:16px;
-    border-radius:8px;
-    border:1px solid #ccc;
+padding:12px 18px;
+font-size:18px;
+border:none;
+border-radius:12px;
+background:white;
+box-shadow:0 3px 10px rgba(0,0,0,0.1);
 }
 
-.info{
-    margin-top:15px;
-    font-size:18px;
-    font-weight:bold;
-    color:#333;
+.cards{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+gap:20px;
+margin-bottom:30px;
 }
 
-canvas{
-    margin-top:20px;
+.card{
+background:white;
+padding:25px;
+border-radius:20px;
+text-align:center;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+}
+
+.card h2{
+font-size:20px;
+margin-bottom:10px;
+}
+
+.card p{
+font-size:32px;
+font-weight:bold;
+color:#ff69b4;
+}
+
+.chart-box{
+background:white;
+padding:20px;
+border-radius:20px;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+}
+
+.analysis{
+margin-top:25px;
+background:white;
+padding:20px;
+border-radius:20px;
+box-shadow:0 5px 15px rgba(0,0,0,0.08);
+line-height:1.8;
+}
+
+@media(max-width:768px){
+.card p{
+font-size:26px;
+}
 }
 </style>
-
 </head>
 
 <body>
 
 <div class="container">
 
-```
-<h1>⚡ 월별 전력 수급 현황 시각화</h1>
+<h1>🌡️ 폭염·기후변화 분석 대시보드 📈</h1>
+
+<div class="selector">
+📍 지역 선택 :
+<select id="regionSelect">
+<option>서울</option>
+<option>부산</option>
+<option>대구</option>
+<option>인천</option>
+<option>대전</option>
+<option>울산</option>
+<option>수원</option>
+<option>양평</option>
+<option>전주</option>
+<option>거제</option>
+</select>
+</div>
+
+<div class="cards">
 
 <div class="card">
-    <label>연도 선택 : </label>
-    <select id="yearSelect"></select>
-
-    <div class="info" id="summary"></div>
-
-    <canvas id="yearChart"></canvas>
+<h2>🌡 평균 최고기온</h2>
+<p id="highTemp">0℃</p>
 </div>
 
 <div class="card">
-    <h2>연도별 전체 비교</h2>
-    <canvas id="compareChart"></canvas>
+<h2>🌙 평균 최저기온</h2>
+<p id="lowTemp">0℃</p>
 </div>
-```
+
+<div class="card">
+<h2>☀ 평균기온</h2>
+<p id="avgTemp">0℃</p>
+</div>
+
+</div>
+
+<div class="chart-box">
+<canvas id="tempChart"></canvas>
+</div>
+
+<div class="analysis">
+<h3>🔍 분석 결과</h3>
+<p id="analysisText"></p>
+</div>
 
 </div>
 
 <script>
 
-const csvFile = "HOME_전력수급_최대_최소전력월별평균.csv";
+const climateData = {
 
-const months = [
-    "1월","2월","3월","4월","5월","6월",
-    "7월","8월","9월","10월","11월","12월"
-];
+서울:{
+high:31.2,
+low:23.6,
+avg:27.4,
+yearly:[25.1,25.4,25.8,26.2,26.6,27.0]
+},
 
-let rawData = [];
-let yearChart;
-let compareChart;
+부산:{
+high:29.8,
+low:24.3,
+avg:27.0,
+yearly:[24.8,25.0,25.2,25.5,25.8,26.2]
+},
 
-fetch(csvFile)
-.then(res => res.text())
-.then(text => {
+대구:{
+high:33.1,
+low:24.1,
+avg:28.6,
+yearly:[26.0,26.3,26.7,27.1,27.6,28.0]
+},
 
-    const rows = text.trim().split("\n");
+인천:{
+high:29.4,
+low:23.1,
+avg:26.2,
+yearly:[24.0,24.2,24.6,25.0,25.4,25.8]
+},
 
-    const headers = rows[0]
-        .replace(/\r/g,"")
-        .split(",");
+대전:{
+high:31.8,
+low:23.5,
+avg:27.6,
+yearly:[25.0,25.3,25.7,26.1,26.5,26.9]
+},
 
-    rawData = rows.slice(1).map(row => {
+울산:{
+high:30.5,
+low:24.0,
+avg:27.2,
+yearly:[24.7,25.0,25.4,25.8,26.1,26.5]
+},
 
-        const cols = row.replace(/\r/g,"").split(",");
+수원:{
+high:31.1,
+low:23.4,
+avg:27.0,
+yearly:[24.9,25.2,25.5,25.9,26.3,26.7]
+},
 
-        let obj = {};
+양평:{
+high:29.9,
+low:22.1,
+avg:26.0,
+yearly:[23.8,24.1,24.5,24.9,25.3,25.7]
+},
 
-        headers.forEach((h,i)=>{
-            obj[h.trim()] = cols[i];
-        });
+전주:{
+high:32.0,
+low:23.8,
+avg:27.9,
+yearly:[25.4,25.8,26.1,26.5,27.0,27.4]
+},
 
-        return obj;
-    });
+거제:{
+high:29.5,
+low:24.5,
+avg:27.0,
+yearly:[24.6,24.9,25.2,25.6,26.0,26.4]
+}
 
-    initialize();
+};
+
+const years=["2020","2021","2022","2023","2024","2025"];
+
+const ctx=document.getElementById("tempChart");
+
+let chart=new Chart(ctx,{
+type:"line",
+data:{
+labels:years,
+datasets:[{
+label:"여름 평균기온(℃)",
+data:climateData["서울"].yearly,
+borderWidth:3,
+tension:0.3,
+fill:false
+}]
+},
+options:{
+responsive:true,
+plugins:{
+legend:{
+display:true
+}
+}
+}
 });
 
-function initialize(){
+function updateData(region){
 
-    const select = document.getElementById("yearSelect");
+const data=climateData[region];
 
-    rawData.forEach(row=>{
+document.getElementById("highTemp").innerText=
+data.high+"℃";
 
-        const option = document.createElement("option");
-        option.value = row["연도"];
-        option.textContent = row["연도"];
+document.getElementById("lowTemp").innerText=
+data.low+"℃";
 
-        select.appendChild(option);
-    });
+document.getElementById("avgTemp").innerText=
+data.avg+"℃";
 
-    select.addEventListener("change",()=>{
-        drawYearChart(select.value);
-    });
+chart.data.datasets[0].data=data.yearly;
+chart.update();
 
-    drawYearChart(rawData[0]["연도"]);
-    drawCompareChart();
+const increase=
+(data.yearly[data.yearly.length-1]
+-
+data.yearly[0]).toFixed(1);
+
+document.getElementById("analysisText").innerHTML=
+`📍 ${region}의 여름 평균기온은
+2020년부터 2025년까지 약
+<strong>${increase}℃</strong>
+상승한 것으로 나타난다.
+이는 기후변화와 도시 열섬현상의
+영향으로 해석할 수 있으며,
+폭염과 열대야 증가,
+온열질환 발생 위험 증가와
+관련이 있을 것으로 예상된다.`;
 }
 
-function drawYearChart(year){
+updateData("서울");
 
-    const row = rawData.find(r=>r["연도"]===year);
-
-    const values = months.map(
-        m => Number(row[m])
-    );
-
-    const maxValue = Math.max(...values);
-    const minValue = Math.min(...values);
-
-    const maxMonth = months[values.indexOf(maxValue)];
-    const minMonth = months[values.indexOf(minValue)];
-
-    document.getElementById("summary").innerHTML =
-        `📈 최대 전력수급 : ${maxMonth} (${maxValue.toLocaleString()})<br>
-         📉 최소 전력수급 : ${minMonth} (${minValue.toLocaleString()})`;
-
-    if(yearChart){
-        yearChart.destroy();
-    }
-
-    yearChart = new Chart(
-        document.getElementById("yearChart"),
-        {
-            type:"bar",
-            data:{
-                labels:months,
-                datasets:[{
-                    label:`${year}년 월별 전력수급`,
-                    data:values
-                }]
-            },
-            options:{
-                responsive:true,
-                plugins:{
-                    legend:{
-                        display:true
-                    }
-                }
-            }
-        }
-    );
-}
-
-function drawCompareChart(){
-
-    const datasets = rawData
-        .slice(0,10)
-        .map(row=>{
-
-            return {
-                label: row["연도"],
-                data: months.map(
-                    m => Number(row[m])
-                ),
-                fill:false
-            };
-        });
-
-    compareChart = new Chart(
-        document.getElementById("compareChart"),
-        {
-            type:"line",
-            data:{
-                labels:months,
-                datasets:datasets
-            },
-            options:{
-                responsive:true,
-                interaction:{
-                    mode:"index",
-                    intersect:false
-                }
-            }
-        }
-    );
-}
+document
+.getElementById("regionSelect")
+.addEventListener("change",function(){
+updateData(this.value);
+});
 
 </script>
 
